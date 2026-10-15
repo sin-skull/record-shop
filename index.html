@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>レコード屋 路地灯</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Dela+Gothic+One&family=DotGothic16&family=Zen+Kurenaido&display=swap">
+<style>
+/* 夕方の店内：深い緑の壁、クラフト紙の値札、黄色いPOP、赤い値札シール */
+:root{
+  --wall:#20332c; --wall-2:#294238; --wall-3:#33503f;
+  --kraft:#e4d4b1; --kraft-2:#d3c094; --ink:#33281a; --ink-soft:#6b5a40;
+  --pop:#f0cf4a; --sticker:#d4452a; --ok:#7fb069; --chalk:#eef0e6; --chalk-dim:#a9b8ad;
+  --f-sign:"Dela Gothic One","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-hand:"Zen Kurenaido","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-dot:"DotGothic16","Courier New",monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--wall);color:var(--chalk);font-family:var(--f-body);font-size:15px;line-height:1.6}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px dashed var(--pop);outline-offset:3px}
+.app{min-height:100%;display:grid;grid-template-rows:auto 1fr;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 24px;gap:14px}
+
+/* ===== 上部バー ===== */
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;border-bottom:2px solid var(--wall-3);padding-bottom:10px}
+.sign{font-family:var(--f-sign);font-size:22px;letter-spacing:.06em;color:var(--pop);transform:rotate(-1.5deg);margin-right:auto}
+.sign small{font-family:var(--f-hand);font-size:13px;color:var(--chalk-dim);margin-left:8px;letter-spacing:0}
+.stat{display:flex;flex-direction:column;line-height:1.15}
+.stat b{font-weight:400;font-size:11px;color:var(--chalk-dim);letter-spacing:.1em}
+.stat span{font-family:var(--f-dot);font-size:20px;font-variant-numeric:tabular-nums}
+.clock span{font-size:26px;color:var(--pop)}
+.phase-tag{font-family:var(--f-hand);font-size:14px;padding:2px 10px;border:1.5px solid currentColor;border-radius:3px;transform:rotate(2deg)}
+.phase-tag.open{color:var(--ok)} .phase-tag.prep{color:var(--pop)} .phase-tag.closed{color:var(--sticker)}
+.btn{background:var(--kraft);color:var(--ink);border:0;border-radius:3px;padding:8px 16px;font-weight:700;box-shadow:0 3px 0 var(--kraft-2);transition:transform .08s}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--kraft-2)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.go{background:var(--pop)}
+.btn.ghost{background:transparent;color:var(--chalk);box-shadow:none;border:1.5px solid var(--wall-3)}
+.debug{display:flex;gap:6px}
+
+/* ===== 本体 ===== */
+.main{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:18px;align-items:start;min-height:0}
+@media (max-width:820px){.main{grid-template-columns:1fr}}
+
+/* カウンター（接客） */
+.counter{background:var(--wall-2);border-radius:4px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.counter h2,.floor h2{margin:0;font-family:var(--f-sign);font-weight:400;font-size:16px;letter-spacing:.08em;color:var(--chalk)}
+.speech{background:var(--kraft);color:var(--ink);border-radius:2px;padding:14px 16px 16px;min-height:118px;position:relative;transform:rotate(-.6deg)}
+.speech::after{content:"";position:absolute;left:28px;bottom:-10px;border:10px solid transparent;border-top-color:var(--kraft);border-bottom:0}
+.speech .who{font-size:12px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:8px}
+.speech .line{font-family:var(--f-hand);font-size:21px;line-height:1.45;margin-top:4px;text-wrap:balance}
+.speech .empty{font-family:var(--f-hand);font-size:17px;color:var(--ink-soft)}
+.kt{display:inline-block;opacity:0;animation:kt-in .42s cubic-bezier(.2,.9,.3,1.3) forwards;animation-delay:calc(var(--i) * 34ms);transform-origin:50% 80%}
+@keyframes kt-in{from{opacity:0;transform:translateY(-.7em) rotate(var(--r)) scale(1.3)}to{opacity:1;transform:translateY(0) rotate(calc(var(--r) * .15)) scale(1)}}
+.queue{display:flex;flex-direction:column;gap:8px}
+.cust{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:8px 10px;background:var(--wall);border:1.5px solid transparent;border-radius:3px;text-align:left;width:100%}
+.cust.sel{border-color:var(--pop)}
+.cust .face{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-sign);font-size:14px;color:var(--wall)}
+.cust .nm{font-size:13px}
+.cust .pat{height:5px;background:var(--wall-3);border-radius:3px;overflow:hidden;margin-top:4px}
+.cust .pat i{display:block;height:100%;background:var(--ok);transition:width .4s linear}
+.cust .pat i.low{background:var(--sticker)}
+.cust .bud{font-family:var(--f-dot);font-size:13px;color:var(--chalk-dim)}
+.queue-empty{font-size:13px;color:var(--chalk-dim);padding:6px 2px}
+.log{font-size:12.5px;color:var(--chalk-dim);display:flex;flex-direction:column;gap:2px;max-height:150px;overflow:auto;border-top:1px dashed var(--wall-3);padding-top:8px}
+.log .g{color:var(--ok)} .log .b{color:#e98f7c}
+
+/* 売り場（棚） */
+.floor{display:flex;flex-direction:column;gap:12px;min-width:0}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13.5px;color:var(--chalk-dim);list-style:none;margin:0;padding:0}
+.crumbs li{display:flex;align-items:center;gap:6px}
+.crumbs li+li::before{content:"＞";color:var(--wall-3)}
+.crumbs button{background:none;border:0;padding:2px 0;color:var(--pop);text-decoration:underline;text-underline-offset:3px}
+.crumbs [aria-current]{color:var(--chalk)}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.dd{position:relative}
+.dd-btn{background:var(--wall-2);border:1.5px solid var(--wall-3);border-radius:3px;padding:6px 12px;min-width:150px;text-align:left;display:flex;justify-content:space-between;gap:10px}
+.dd-btn::after{content:"▾";color:var(--pop);transition:transform .2s}
+.dd.open .dd-btn::after{transform:rotate(180deg)}
+.dd-btn small{color:var(--chalk-dim);font-size:11px;margin-right:6px}
+.dd-list{position:absolute;z-index:20;top:calc(100% + 4px);left:0;min-width:100%;margin:0;padding:4px;list-style:none;background:var(--kraft);color:var(--ink);border-radius:3px;box-shadow:0 8px 20px rgba(0,0,0,.35);transform-origin:top;animation:dd-in .16s ease-out}
+@keyframes dd-in{from{opacity:0;transform:scaleY(.6)}to{opacity:1;transform:none}}
+.dd-list li button{width:100%;text-align:left;background:none;border:0;padding:6px 10px;border-radius:2px}
+.dd-list li button:hover,.dd-list li button[aria-selected="true"]{background:var(--kraft-2)}
+.crates{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.crate{background:var(--wall-2);border:0;border-radius:4px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:10px;transition:transform .15s}
+.crate:hover{transform:translateY(-3px) rotate(-.4deg)}
+.crate .pop{align-self:flex-start;background:var(--pop);color:var(--ink);font-family:var(--f-hand);font-size:17px;padding:2px 10px;transform:rotate(-2deg)}
+.crate .stack{display:flex;height:70px}
+.crate .stack span{flex:1;border-radius:2px 2px 0 0;margin-right:-6px;box-shadow:-2px 0 0 rgba(0,0,0,.25)}
+.crate .meta{font-size:12.5px;color:var(--chalk-dim)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px}
+.rec{background:none;border:0;padding:0;text-align:left;display:flex;flex-direction:column;gap:6px;transition:transform .15s;position:relative}
+.rec:hover{transform:translateY(-4px) rotate(var(--tilt))}
+.rec .cover{aspect-ratio:1;width:100%;max-width:100%;border-radius:2px;overflow:hidden;box-shadow:0 4px 0 rgba(0,0,0,.25);display:block}
+.rec .cover svg{display:block;width:100%;height:100%}
+.rec .t{font-size:13px;line-height:1.35}
+.rec .a{font-size:11.5px;color:var(--chalk-dim)}
+.price{position:absolute;top:-6px;right:-6px;background:var(--sticker);color:#fff;font-family:var(--f-dot);font-size:12px;padding:2px 6px;border-radius:50%/40%;transform:rotate(8deg)}
+.rec.out .cover{filter:grayscale(1) brightness(.55)}
+.rec.out::after{content:"品切れ";position:absolute;top:34%;left:50%;transform:translateX(-50%) rotate(-8deg);font-family:var(--f-sign);font-size:18px;color:var(--sticker);border:2px solid var(--sticker);padding:0 8px;background:rgba(32,51,44,.8)}
+.pager{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;padding-top:4px}
+.pager button{min-width:36px;height:36px;border-radius:3px;border:1.5px solid var(--wall-3);background:var(--wall-2)}
+.pager button[aria-current="page"]{background:var(--pop);color:var(--ink);border-color:var(--pop);transform:rotate(-3deg)}
+.pager button[disabled]{opacity:.35;cursor:not-allowed}
+.hint{font-size:12.5px;color:var(--chalk-dim)}
+.nohit{font-family:var(--f-hand);font-size:17px;color:var(--chalk-dim);padding:30px 0;text-align:center}
+
+/* モーダル */
+.veil{position:fixed;inset:0;z-index:50;background:rgba(10,18,15,.72);display:grid;place-items:center;padding:20px max(16px,env(safe-area-inset-left,0px));animation:fade .18s}
+@keyframes fade{from{opacity:0}}
+.modal{background:var(--kraft);color:var(--ink);border-radius:3px;width:min(720px,100%);max-height:calc(100% - 20px);overflow:auto;padding:20px;display:grid;grid-template-columns:220px 1fr;gap:20px;animation:pop-in .26s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop-in{from{opacity:0;transform:translateY(16px) rotate(-1deg) scale(.96)}}
+@media (max-width:620px){.modal{grid-template-columns:1fr}}
+.modal .cover{width:100%;max-width:100%;aspect-ratio:1;box-shadow:0 6px 0 var(--kraft-2);transform:rotate(-1.5deg)}
+.modal .cover svg{width:100%;height:100%;display:block}
+.modal h3{margin:0;font-family:var(--f-sign);font-weight:400;font-size:22px;line-height:1.3;text-wrap:balance}
+.modal .by{color:var(--ink-soft);margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{font-family:var(--f-hand);font-size:14px;background:var(--pop);padding:0 8px;border-radius:2px}
+.chip.g{background:var(--ink);color:var(--kraft)}
+.kv{font-size:13px;display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--ink-soft)}
+.kv b{color:var(--ink);font-family:var(--f-dot);font-weight:400;font-size:16px}
+.acc{margin-top:12px;border-top:1.5px solid var(--kraft-2)}
+.acc-head{width:100%;background:none;border:0;padding:10px 0;display:flex;justify-content:space-between;font-weight:700;color:var(--ink)}
+.acc-head::after{content:"＋";transition:transform .25s}
+.acc-head[aria-expanded="true"]::after{transform:rotate(45deg)}
+.acc-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+.acc-body.open{grid-template-rows:1fr}
+.acc-body>div{overflow:hidden}
+.acc-body ol{margin:0 0 10px;padding-left:1.6em;font-size:14px}
+.acc-body li{padding:2px 0;border-bottom:1px dotted var(--kraft-2)}
+.modal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+.modal-actions .btn{box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.modal-actions .btn.go{background:var(--ink);color:var(--pop)}
+.modal-actions .note{font-size:12.5px;color:var(--ink-soft)}
+
+/* 売れた時のスタンプ */
+.stamp{position:fixed;z-index:60;left:50%;top:40%;pointer-events:none;font-family:var(--f-sign);font-size:clamp(40px,8vw,84px);letter-spacing:.06em;color:var(--sticker);border:6px solid var(--sticker);padding:0 18px;border-radius:6px;background:rgba(228,212,177,.9);animation:stamp 1.1s ease-out forwards}
+.stamp.miss{color:var(--ink-soft);border-color:var(--ink-soft)}
+.stamp span{display:inline-block;animation:kt-in .3s cubic-bezier(.2,.9,.3,1.4) both;animation-delay:calc(var(--i)*50ms)}
+@keyframes stamp{0%{transform:translate(-50%,-50%) rotate(-14deg) scale(2.2);opacity:0}18%{transform:translate(-50%,-50%) rotate(-8deg) scale(1);opacity:1}75%{opacity:1}100%{transform:translate(-50%,-60%) rotate(-8deg) scale(1);opacity:0}}
+
+/* 精算 */
+.report{display:grid;gap:18px}
+.report h3{font-size:26px}
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.num{border-top:2px solid var(--ink);padding-top:6px}
+.num small{display:block;font-size:12px;color:var(--ink-soft)}
+.num b{font-family:var(--f-dot);font-weight:400;font-size:28px;font-variant-numeric:tabular-nums}
+.bars{display:flex;align-items:flex-end;gap:6px;height:130px;border-bottom:1.5px solid var(--ink);padding:0 2px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px;font-size:11px}
+.bars i{display:block;width:100%;background:var(--ink);border-radius:2px 2px 0 0;height:0;transition:height .7s cubic-bezier(.2,.9,.3,1)}
+.bars i.pk{background:var(--sticker)}
+.bars em{font-style:normal;font-family:var(--f-dot)}
+.hours{display:flex;gap:6px;padding:0 2px;font-size:11px;color:var(--ink-soft)}
+.hours span{flex:1;text-align:center}
+.pause-veil .modal{grid-template-columns:1fr;text-align:center;width:min(380px,100%)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="sign">レコード屋 路地灯<small>ろじあかり</small></div>
+    <div class="stat"><b>DAY</b><span id="sDay">1</span></div>
+    <div class="stat clock"><b>時刻</b><span id="sClock">10:00</span></div>
+    <div class="stat"><b>所持金</b><span id="sMoney">¥0</span></div>
+    <div class="stat"><b>評判</b><span id="sRep">0</span></div>
+    <span class="phase-tag prep" id="sPhase">開店前</span>
+    <button class="btn go" id="btnMain">開店する</button>
+    <button class="btn ghost" id="btnPause" hidden>一時停止</button>
+    <div class="debug" id="debugBox" hidden>
+      <button class="btn ghost" data-speed="1">×1</button>
+      <button class="btn ghost" data-speed="10">×10</button>
+      <button class="btn ghost" data-speed="60">×60</button>
+      <button class="btn ghost" id="btnReset">データ消去</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="counter" aria-label="カウンター">
+      <h2>カウンター</h2>
+      <div class="speech" id="speech" aria-live="polite"></div>
+      <div class="queue" id="queue"></div>
+      <div class="log" id="log" aria-live="polite"></div>
+    </section>
+
+    <section class="floor" aria-label="売り場">
+      <nav aria-label="現在地"><ol class="crumbs" id="crumbs"></ol></nav>
+      <div class="tools" id="tools"></div>
+      <div id="floorBody"></div>
+      <nav class="pager" id="pager" aria-label="ページ"></nav>
+    </section>
+  </main>
+</div>
+<div id="modalRoot"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   データ（ER図の ARTIST / ALBUM / TRACK / TAG / CRATE / CUSTOMER_TYPE）
+   ========================================================= */
+const TAGS = {
+  '雨':     {a:'雨の日に聴きたい', n:'雨に合うやつ'},
+  '夜':     {a:'夜に流したい', n:'夜っぽいの'},
+  '朝':     {a:'朝に聴きたい', n:'朝に合うやつ'},
+  'ドライブ':{a:'車で流したい', n:'ドライブ向けの'},
+  '踊れる': {a:'踊りたい', n:'踊れるやつ'},
+  '泣ける': {a:'ちょっと泣きたい', n:'沁みるやつ'},
+  '静か':   {a:'落ち着きたい', n:'静かなの'},
+  '熱い':   {a:'気合い入れたい', n:'アガるやつ'},
+  '懐かしい':{a:'昔を思い出したい', n:'懐かしい感じの'},
+  '作業用': {a:'作業中に流したい', n:'集中できるの'},
+};
+const ARTISTS = [
+  {id:1, name:'路地裏ブラザーズ', genre:'ヒップホップ', color:'#c9a227', style:'dots'},
+  {id:2, name:'汐見ミナ',         genre:'シティポップ', color:'#e0787a', style:'sun'},
+  {id:3, name:'The Low Tide Club',genre:'ジャズ',       color:'#3f7f9a', style:'waves'},
+  {id:4, name:'鈍行列車',         genre:'フォーク',     color:'#8a9a5b', style:'rails'},
+  {id:5, name:'VELVET MONDAY',    genre:'ソウル',       color:'#8e3b5f', style:'rings'},
+  {id:6, name:'灯台守',           genre:'アンビエント', color:'#6f8fa3', style:'fog'},
+  {id:7, name:'NEON KOMAINU',     genre:'エレクトロ',   color:'#5bd1b5', style:'grid'},
+  {id:8, name:'砂嵐ガレージ',     genre:'ロック',       color:'#d9763a', style:'noise'},
+];
+const ALBUMS = [
+  [1,'十円玉のビート',2019,2800,['夜','熱い','踊れる'],['イントロ（自販機前）','十円玉のビート','終電コンクリート','路地裏の掟','アウトロ']],
+  [1,'雨宿りサイファー',2021,3200,['雨','夜','静か'],['軒下','雨宿りサイファー','濡れたスニーカー','傘はいらない']],
+  [1,'団地の朝',2023,3000,['朝','懐かしい'],['6:30','団地の朝','ベランダ','母の味噌汁','自転車置き場']],
+  [2,'湾岸線',1984,3800,['ドライブ','夜','懐かしい'],['湾岸線','ミッドナイト・コール','ガラスの水平線','助手席のカセット']],
+  [2,'サマー・リフレイン',1986,4200,['ドライブ','踊れる'],['サマー・リフレイン','ピンクの防波堤','夕立ダンス','エンドロール']],
+  [2,'午前二時のレモネード',1988,3600,['夜','泣ける'],['午前二時のレモネード','置き手紙','星の降るテラス','さよならの練習']],
+  [3,'Low Tide',2015,3400,['静か','夜','作業用'],['Low Tide','Salt & Brass','Pier No.9','Last Ferry']],
+  [3,'Rainy Standards',2017,3000,['雨','静か'],['Rain on the Awning','Umbrella Blues','Grey Avenue','Puddle Waltz']],
+  [3,'Café at Dawn',2020,3200,['朝','作業用'],['First Light','Café at Dawn','Toast & Bebop','Morning Paper']],
+  [4,'各駅停車の歌',2012,2600,['懐かしい','静か'],['始発','各駅停車の歌','無人駅','車窓の田んぼ']],
+  [4,'ふるさと行き',2014,2800,['泣ける','懐かしい'],['ふるさと行き','祖父の畑','盆の灯り','また来るね']],
+  [4,'夜汽車',2018,3000,['夜','泣ける','静か'],['夜汽車','寝台の窓','トンネル','終着駅']],
+  [5,'Monday Velvet',2010,3500,['踊れる','熱い'],['Monday Velvet','Get Up Slow','Brass Heart','Sweet Overtime']],
+  [5,'Slow Burn',2013,3300,['夜','泣ける'],['Slow Burn','Candle Talk',"Don't Leave at Nine",'Velvet Rain']],
+  [5,'Sunday Morning Soul',2016,3100,['朝','懐かしい'],['Sunday Morning Soul','Pancake Groove','Church Street','Easy']],
+  [6,'霧笛',2019,2900,['静か','作業用'],['霧笛','灯室','潮見表','無線']],
+  [6,'雨の観測記録',2021,3100,['雨','静か','作業用'],['観測1','観測2（強雨）','観測3','観測終了']],
+  [6,'夜明け前の海',2024,3300,['朝','静か'],['4:12','薄明','海鳥','日の出']],
+  [7,'狛犬ダンスフロア',2020,3200,['踊れる','熱い'],['参道','狛犬ダンスフロア','鈴の音リミックス','お賽銭']],
+  [7,'首都高ナイトレース',2022,3400,['ドライブ','夜','熱い'],['C1','首都高ナイトレース','パーキングエリア','朝焼けの出口']],
+  [7,'深夜作業ループ',2023,2800,['作業用','夜'],['loop_01','loop_02','loop_03','セーブして寝る']],
+  [8,'砂嵐',2011,2700,['熱い','ドライブ'],['砂嵐','アクセル','錆びたギター','ガレージに帰る']],
+  [8,'放課後スピーカー',2014,2900,['懐かしい','熱い'],['放課後スピーカー','屋上','文化祭前夜','卒業']],
+  [8,'泣き虫ディストーション',2017,3100,['泣ける','雨'],['泣き虫ディストーション','雨のライブハウス','アンコール','帰り道']],
+].map((r,i)=>({id:i+1,artistId:r[0],title:r[1],year:r[2],price:r[3],tags:r[4],tracks:r[5]}));
+const CRATES = [
+  {id:'A', name:'邦楽',          pop:'邦楽いろいろ',  artists:[1,2,4,8]},
+  {id:'B', name:'洋楽',          pop:'海の向こうから',artists:[3,5]},
+  {id:'C', name:'インスト・電子',pop:'歌なしもあり',  artists:[6,7]},
+];
+const CUSTOMER_TYPES = [
+  {id:1, name:'学生',           color:'#f0cf4a', budget:3000, patience:30, likes:['熱い','踊れる','懐かしい','泣ける']},
+  {id:2, name:'会社員',         color:'#9fc3d6', budget:4000, patience:24, likes:['夜','作業用','ドライブ','静か']},
+  {id:3, name:'常連のおじさん', color:'#c9b08a', budget:5000, patience:45, likes:['懐かしい','静か','雨']},
+  {id:4, name:'カップル',       color:'#e8a0a8', budget:4500, patience:34, likes:['夜','ドライブ','泣ける']},
+  {id:5, name:'DJ',             color:'#5bd1b5', budget:4000, patience:20, likes:['踊れる','熱い','夜']},
+  {id:6, name:'喫茶店のマスター',color:'#d9b46a',budget:4500, patience:40, likes:['朝','静か','作業用','雨']},
+];
+const artistOf = a => ARTISTS.find(x=>x.id===a.artistId);
+const albumById = id => ALBUMS.find(a=>a.id===id);
+
+/* =========================================================
+   時間：営業 10:00〜19:00（540分）を実時間30分で進める
+   ========================================================= */
+const OPEN_MIN = 10*60, CLOSE_MIN = 19*60;
+const REAL_MS_PER_GAME_MIN = (30*60*1000) / (CLOSE_MIN-OPEN_MIN); // 約3.33秒
+const SAVE_KEY = 'rojiakari.v1';
+const PER_PAGE = 8;
+const params = new URLSearchParams(location.search);
+const DEBUG = params.has('debug');
+
+/* =========================================================
+   状態（SHOP / STOCK / VISIT / DAY_REPORT）
+   ========================================================= */
+function freshState(){
+  const stock = {};
+  ALBUMS.forEach(a=>{ stock[a.id] = 2 + (a.id*7)%3; }); // 2〜4枚
+  return {
+    v:1, day:1, money:20000, rep:0, phase:'prep', clock:OPEN_MIN,
+    stock, queue:[], nextCustomerAt:OPEN_MIN+3, custSeq:0, selectedId:null,
+    today:freshToday(), lastReport:null, log:[]
+  };
+}
+function freshToday(){ return {sales:0, visitors:0, served:0, lost:0, repStart:0, hourly:Array(9).fill(0)}; }
+let S = load() || freshState();
+function load(){ try{ const t = localStorage.getItem(SAVE_KEY); return t ? JSON.parse(t) : null; }catch(e){ return null; } }
+function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
+
+/* 乱数（表示用ジャケットは固定シード） */
+function rng(seed){ let s = seed>>>0 || 1; return ()=>{ s ^= s<<13; s>>>=0; s ^= s>>17; s ^= s<<5; s>>>=0; return s/4294967296; }; }
+const rand = Math.random;
+const pick = arr => arr[Math.floor(rand()*arr.length)];
+const yen = n => '¥' + n.toLocaleString('ja-JP');
+const hhmm = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(Math.floor(m%60)).padStart(2,'0')}`;
+const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* =========================================================
+   ジャケット生成（手描き風に少しずつ歪ませる）
+   ========================================================= */
+const coverCache = {};
+function coverSVG(album){
+  if (coverCache[album.id]) return coverCache[album.id];
+  const ar = artistOf(album), r = rng(album.id*9973 + 17);
+  const c = ar.color, ink = '#1e1a14', paper = ['#efe3c8','#e7dcc6','#f2e9d4'][album.id%3];
+  const j = (v,amt)=> v + (r()-.5)*amt; // ゆらぎ
+  let g = '';
+  const bgDark = album.id % 2 === 0;
+  const bg = bgDark ? ink : paper, fg = bgDark ? paper : ink;
+  switch(ar.style){
+    case 'dots': for(let y=10;y<100;y+=11) for(let x=10;x<100;x+=11){ const rr = 1 + 4*Math.abs(Math.sin((x+y+album.id*13)/23)); g += `<circle cx="${j(x,2)}" cy="${j(y,2)}" r="${rr.toFixed(1)}" fill="${c}"/>`; } break;
+    case 'sun': g += `<circle cx="${j(50,10)}" cy="${j(48,8)}" r="${j(26,6)}" fill="${c}"/>`; for(let i=0;i<5;i++) g += `<rect x="0" y="${58+i*8}" width="100" height="${3+i}" fill="${bg}"/>`; break;
+    case 'waves': for(let i=0;i<7;i++){ const y=20+i*11; g += `<path d="M-5 ${y} Q 20 ${j(y-8,6)} 45 ${y} T 105 ${y}" stroke="${i%2?c:fg}" stroke-width="${j(3,2)}" fill="none"/>`; } break;
+    case 'rails': g += `<rect x="${j(36,6)}" y="0" width="4" height="100" fill="${c}"/><rect x="${j(60,6)}" y="0" width="4" height="100" fill="${c}"/>`; for(let y=6;y<100;y+=12) g += `<rect x="28" y="${j(y,3)}" width="${j(46,6)}" height="3" fill="${fg}" transform="rotate(${j(0,4)} 50 ${y})"/>`; break;
+    case 'rings': for(let i=6;i>0;i--) g += `<circle cx="${j(50,4)}" cy="${j(50,4)}" r="${i*7}" fill="none" stroke="${i%2?c:fg}" stroke-width="${j(3,2)}"/>`; break;
+    case 'fog': for(let i=0;i<9;i++) g += `<rect x="${j(-10,20)}" y="${10+i*9}" width="${j(90,40)}" height="${j(5,3)}" rx="2" fill="${c}" opacity="${(.25+r()*.6).toFixed(2)}"/>`; g += `<rect x="${j(70,8)}" y="${j(40,10)}" width="6" height="40" fill="${fg}"/>`; break;
+    case 'grid': for(let x=0;x<100;x+=12.5) g += `<line x1="${x}" y1="0" x2="${j(x,10)}" y2="100" stroke="${c}" stroke-width="1"/>`; for(let y=0;y<100;y+=12.5) g += `<line x1="0" y1="${y}" x2="100" y2="${j(y,10)}" stroke="${c}" stroke-width="1"/>`; g += `<rect x="${j(30,20)}" y="${j(30,20)}" width="${j(30,10)}" height="${j(30,10)}" fill="${c}"/>`; break;
+    case 'noise': for(let i=0;i<70;i++) g += `<rect x="${(r()*100).toFixed(1)}" y="${(r()*100).toFixed(1)}" width="${(2+r()*14).toFixed(1)}" height="${(1+r()*3).toFixed(1)}" fill="${r()<.5?c:fg}"/>`; break;
+  }
+  const label = esc(album.title.length>12 ? album.title.slice(0,12)+'…' : album.title);
+  const tx = j(8,3), ty = 92;
+  const svg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(album.title)}のジャケット"><rect width="100" height="100" fill="${bg}"/>${g}<rect x="${tx-2}" y="${ty-9}" width="${Math.min(label.length*6.4+4,90)}" height="12" fill="${bg}" opacity=".85" transform="rotate(${j(0,3)} ${tx} ${ty})"/><text x="${tx}" y="${ty}" font-size="8" fill="${fg}" font-family="Zen Kurenaido, sans-serif" transform="rotate(${j(0,3)} ${tx} ${ty})">${label}</text></svg>`;
+  return coverCache[album.id] = svg;
+}
+
+/* =========================================================
+   客の生成（CUSTOMER_TYPE → 店頭の客 / VISIT）
+   ========================================================= */
+function makeRequest(type){
+  const likes = type.likes.slice();
+  const n = rand() < .45 ? 2 : 1;
+  const tags = [];
+  while (tags.length < n && likes.length){ tags.push(likes.splice(Math.floor(rand()*likes.length),1)[0]); }
+  const text = tags.length === 2
+    ? `${TAGS[tags[0]].a}んですけど、${TAGS[tags[1]].n}ってあります？`
+    : `${TAGS[tags[0]].n}、ありますか？`;
+  return {tags, text};
+}
+function spawnCustomer(){
+  const type = pick(CUSTOMER_TYPES);
+  const req = makeRequest(type);
+  S.custSeq++;
+  S.today.visitors++;
+  S.today.hourly[Math.min(8, Math.floor((S.clock-OPEN_MIN)/60))]++;
+  if (S.queue.length >= 5){ S.today.lost++; addLog(`${type.name}が店の混雑を見て帰った`, 'b'); return; }
+  const budget = Math.round((type.budget + (rand()-.4)*1200)/100)*100;
+  const c = {id:S.custSeq, typeId:type.id, tags:req.tags, text:req.text, budget, patience:type.patience, maxPatience:type.patience, fresh:true};
+  S.queue.push(c);
+  if (S.selectedId == null) S.selectedId = c.id;
+}
+function arrivalGap(){
+  const hour = Math.floor(S.clock/60);
+  const rush = (hour===12 || hour===17 || hour===18) ? .6 : 1;
+  const repBoost = 1 + Math.max(-.4, S.rep/60);
+  const base = 13 * rush / repBoost;
+  return Math.max(3, base * (.6 + rand()*.8));
+}
+
+/* =========================================================
+   進行（ループ）
+   ========================================================= */
+let speed = 1, paused = false, acc = 0, lastT = 0;
+function tick(t){
+  if (!lastT) lastT = t;
+  let dt = Math.min(1000, t - lastT); lastT = t;
+  if (S.phase === 'open' && !paused){
+    acc += dt * speed;
+    while (acc >= REAL_MS_PER_GAME_MIN && S.phase === 'open'){
+      acc -= REAL_MS_PER_GAME_MIN;
+      stepMinute();
+    }
+    renderClockOnly();
+  }
+  requestAnimationFrame(tick);
+}
+function stepMinute(){
+  S.clock++;
+  // 客の我慢
+  for (const c of S.queue.slice()){
+    c.patience--;
+    if (c.patience <= 0){
+      S.queue = S.queue.filter(x=>x!==c);
+      S.today.lost++; S.rep = Math.max(-50, S.rep-2);
+      addLog(`${typeOf(c).name}が待ちきれずに帰った`, 'b');
+      if (S.selectedId === c.id) S.selectedId = S.queue[0]?.id ?? null;
+    }
+  }
+  if (S.clock >= S.nextCustomerAt && S.clock < CLOSE_MIN - 5){
+    spawnCustomer();
+    S.nextCustomerAt = S.clock + arrivalGap();
+  }
+  if (S.clock >= CLOSE_MIN){ closeShop(); return; }
+  if (S.clock % 5 === 0) save();
+  renderCounter();
+}
+function typeOf(c){ return CUSTOMER_TYPES.find(t=>t.id===c.typeId); }
+
+function openShop(){
+  S.phase = 'open'; S.clock = OPEN_MIN; S.queue = []; S.selectedId = null;
+  S.today = freshToday(); S.today.repStart = S.rep;
+  S.nextCustomerAt = OPEN_MIN + 2; acc = 0; paused = false;
+  addLog(`DAY ${S.day} 開店`, 'g');
+  save(); renderAll();
+}
+function closeShop(){
+  S.clock = CLOSE_MIN;
+  const left = S.queue.length;
+  if (left){ S.today.lost += left; addLog(`閉店。並んでいた${left}人には帰ってもらった`, 'b'); }
+  S.queue = []; S.selectedId = null; S.phase = 'closed';
+  S.lastReport = {day:S.day, ...S.today, repEnd:S.rep, money:S.money};
+  save(); renderAll(); showReport();
+}
+function nextDay(){
+  S.day++; S.phase = 'prep'; S.clock = OPEN_MIN; S.log = [];
+  save(); closeModal(); renderAll();
+}
+
+/* =========================================================
+   接客（渡す）
+   ========================================================= */
+function handOver(albumId){
+  const c = S.queue.find(x=>x.id===S.selectedId);
+  const al = albumById(albumId);
+  if (!c || S.phase!=='open' || S.stock[albumId] <= 0) return;
+  const t = typeOf(c);
+  if (al.price > c.budget){
+    c.patience = Math.max(1, c.patience-5);
+    sayReaction(c, 'ちょっと予算オーバーで……');
+    stamp('予算外', true); save(); renderCounter(); return;
+  }
+  const hit = c.tags.filter(tg=>al.tags.includes(tg)).length;
+  if (hit === 0){
+    c.patience = Math.max(1, c.patience-6); S.rep = Math.max(-50, S.rep-1);
+    sayReaction(c, 'うーん、ちょっと違うかな……');
+    stamp('ちがう', true); save(); renderCounter(); return;
+  }
+  const perfect = hit === c.tags.length;
+  const tip = perfect ? Math.round(al.price*.1/10)*10 : 0;
+  S.money += al.price + tip; S.today.sales += al.price + tip; S.today.served++;
+  S.stock[albumId]--; S.rep = Math.min(100, S.rep + (perfect?2:1));
+  addLog(`${t.name}に「${al.title}」 ${yen(al.price)}${tip?` ＋心付け${yen(tip)}`:''}`, 'g');
+  S.queue = S.queue.filter(x=>x!==c);
+  S.selectedId = S.queue[0]?.id ?? null;
+  stamp(perfect ? 'SOLD!' : 'まいど');
+  save(); closeModal(); renderAll();
+}
+let reactionFor = null;
+function sayReaction(c, text){ reactionFor = {id:c.id, text}; closeModal(); }
+
+/* =========================================================
+   売り場の表示状態（パンくず・プルダウン・ページ）
+   ========================================================= */
+const view = {crate:null, page:1, genre:'all', sort:'default'};
+const GENRES = ['all', ...new Set(ARTISTS.map(a=>a.genre))];
+const SORTS = {default:'棚の並び', priceAsc:'安い順', priceDesc:'高い順', year:'新しい順'};
+
+function albumsInView(){
+  const crate = CRATES.find(c=>c.id===view.crate);
+  let list = ALBUMS.filter(a=>crate.artists.includes(a.artistId));
+  if (view.genre !== 'all') list = list.filter(a=>artistOf(a).genre===view.genre);
+  if (view.sort==='priceAsc') list = list.slice().sort((a,b)=>a.price-b.price);
+  if (view.sort==='priceDesc') list = list.slice().sort((a,b)=>b.price-a.price);
+  if (view.sort==='year') list = list.slice().sort((a,b)=>b.year-a.year);
+  return list;
+}
+
+/* =========================================================
+   描画
+   ========================================================= */
+const $ = id => document.getElementById(id);
+function renderAll(){ renderBar(); renderCounter(); renderFloor(); }
+function renderClockOnly(){ $('sClock').textContent = hhmm(S.clock); }
+function renderBar(){
+  $('sDay').textContent = S.day;
+  renderClockOnly();
+  $('sMoney').textContent = yen(S.money);
+  $('sRep').textContent = S.rep;
+  const ph = $('sPhase');
+  ph.className = 'phase-tag ' + S.phase;
+  ph.textContent = {prep:'開店前', open:'営業中', closed:'閉店'}[S.phase];
+  const b = $('btnMain');
+  b.hidden = S.phase === 'open';
+  b.textContent = S.phase === 'prep' ? '開店する' : '精算を見る';
+  $('btnPause').hidden = S.phase !== 'open';
+}
+function kinetic(text){
+  return [...text].map((ch,i)=>{
+    const r = ((i*37)%11 - 5) * 3;
+    return `<span class="kt" style="--i:${i};--r:${r}deg">${ch===' '?'&nbsp;':esc(ch)}</span>`;
+  }).join('');
+}
+let lastSpokenKey = '';
+function renderCounter(){
+  const sp = $('speech');
+  const c = S.queue.find(x=>x.id===S.selectedId);
+  let key, html;
+  if (S.phase !== 'open'){
+    key = 'idle-'+S.phase;
+    html = `<div class="empty">${S.phase==='prep' ? '開店前。棚を眺めて、準備ができたら「開店する」。' : '本日は閉店しました。'}</div>`;
+  } else if (!c){
+    key = 'none';
+    html = `<div class="empty">……お客さんを待っています。</div>`;
+  } else {
+    const t = typeOf(c);
+    const text = (reactionFor && reactionFor.id===c.id) ? reactionFor.text : c.text;
+    key = c.id + '|' + text;
+    html = `<div class="who"><span>${esc(t.name)} #${c.id}</span><span>予算 ${yen(c.budget)}</span></div><div class="line">「${kinetic(text)}」</div>`;
+  }
+  if (key !== lastSpokenKey){ sp.innerHTML = html; lastSpokenKey = key; }
+  if (reactionFor && (!c || reactionFor.id !== c.id)) reactionFor = null;
+
+  const q = $('queue');
+  if (S.phase !== 'open'){ q.innerHTML = ''; }
+  else if (!S.queue.length){ q.innerHTML = `<div class="queue-empty">並んでいるお客さんはいません</div>`; }
+  else {
+    q.innerHTML = S.queue.map(c=>{
+      const t = typeOf(c), p = Math.max(0, c.patience/c.maxPatience*100);
+      return `<button class="cust ${c.id===S.selectedId?'sel':''}" data-cust="${c.id}" aria-pressed="${c.id===S.selectedId}">
+        <span class="face" style="background:${t.color}">${esc(t.name[0])}</span>
+        <span><span class="nm">${esc(t.name)} #${c.id}</span><span class="pat"><i class="${p<35?'low':''}" style="width:${p}%"></i></span></span>
+        <span class="bud">${yen(c.budget)}</span></button>`;
+    }).join('');
+  }
+  $('log').innerHTML = S.log.slice(-30).reverse().map(l=>`<div class="${l.k}">${esc(l.t)}</div>`).join('');
+}
+function addLog(t, k=''){ S.log.push({t:`${hhmm(S.clock)} ${t}`, k}); if (S.log.length>60) S.log.shift(); }
+
+function renderFloor(){
+  // パンくず
+  const crumbs = [`<li><button data-crumb="top">店内</button></li>`];
+  if (view.crate){
+    const cr = CRATES.find(c=>c.id===view.crate);
+    crumbs.push(`<li><span aria-current="page">棚${cr.id}「${esc(cr.name)}」</span></li>`);
+  }
+  if (!view.crate) crumbs[0] = `<li><span aria-current="page">店内</span></li>`;
+  $('crumbs').innerHTML = crumbs.join('');
+
+  const body = $('floorBody'), tools = $('tools'), pager = $('pager');
+  if (!view.crate){
+    tools.innerHTML = `<span class="hint">棚を選んでレコードを探す。お客さんの言葉に合う1枚を渡そう。</span>`;
+    body.innerHTML = `<div class="crates">${CRATES.map(cr=>{
+      const albums = ALBUMS.filter(a=>cr.artists.includes(a.artistId));
+      const total = albums.reduce((s,a)=>s+S.stock[a.id],0);
+      const spines = albums.map(a=>`<span style="background:${artistOf(a).color};opacity:${S.stock[a.id]?1:.25}"></span>`).join('');
+      return `<button class="crate" data-crate="${cr.id}"><span class="pop">${esc(cr.pop)}</span><span class="stack">${spines}</span>
+        <span><b>棚${cr.id}「${esc(cr.name)}」</b><br><span class="meta">${albums.length}タイトル・在庫${total}枚</span></span></button>`;
+    }).join('')}</div>`;
+    pager.innerHTML = '';
+    return;
+  }
+  tools.innerHTML = dropdown('genre','ジャンル', GENRES.map(g=>[g, g==='all'?'すべて':g]), view.genre)
+                  + dropdown('sort','並び', Object.entries(SORTS), view.sort);
+  const list = albumsInView();
+  const pages = Math.max(1, Math.ceil(list.length/PER_PAGE));
+  view.page = Math.min(view.page, pages);
+  const slice = list.slice((view.page-1)*PER_PAGE, view.page*PER_PAGE);
+  body.innerHTML = slice.length ? `<div class="grid">${slice.map(a=>{
+    const tilt = ((a.id*13)%7-3)*.6;
+    return `<button class="rec ${S.stock[a.id]<=0?'out':''}" data-album="${a.id}" style="--tilt:${tilt}deg">
+      <span class="cover">${coverSVG(a)}</span><span class="price">${yen(a.price)}</span>
+      <span class="t">${esc(a.title)}</span><span class="a">${esc(artistOf(a).name)}・残${S.stock[a.id]}</span></button>`;
+  }).join('')}</div>` : `<div class="nohit">この条件のレコードは棚にありません</div>`;
+  // ページネーション
+  if (pages > 1){
+    let h = `<button data-page="${view.page-1}" ${view.page===1?'disabled':''} aria-label="前のページ">‹</button>`;
+    for (let i=1;i<=pages;i++) h += `<button data-page="${i}" ${i===view.page?'aria-current="page"':''}>${i}</button>`;
+    h += `<button data-page="${view.page+1}" ${view.page===pages?'disabled':''} aria-label="次のページ">›</button>`;
+    pager.innerHTML = h;
+  } else pager.innerHTML = '';
+}
+
+/* プルダウン（自作） */
+function dropdown(key, label, options, current){
+  const cur = options.find(o=>o[0]===current) || options[0];
+  return `<div class="dd" data-dd="${key}"><button class="dd-btn" aria-haspopup="listbox" aria-expanded="false"><span><small>${esc(label)}</small>${esc(cur[1])}</span></button>
+    <ul class="dd-list" role="listbox" hidden>${options.map(o=>`<li><button role="option" data-val="${esc(o[0])}" aria-selected="${o[0]===current}">${esc(o[1])}</button></li>`).join('')}</ul></div>`;
+}
+function closeDropdowns(except){
+  document.querySelectorAll('.dd.open').forEach(d=>{ if (d!==except){ d.classList.remove('open'); d.querySelector('.dd-list').hidden = true; d.querySelector('.dd-btn').setAttribute('aria-expanded','false'); }});
+}
+
+/* モーダル：アルバム詳細（アコーディオンで収録曲） */
+let modalAlbum = null;
+function openAlbum(id){
+  const a = albumById(id), ar = artistOf(a);
+  modalAlbum = id;
+  const c = S.queue.find(x=>x.id===S.selectedId);
+  const canHand = S.phase==='open' && c && S.stock[id] > 0;
+  const who = c ? `${typeOf(c).name} #${c.id}` : '';
+  const note = S.phase!=='open' ? '営業中にお客さんへ渡せます' : !c ? 'カウンターにお客さんがいません' : S.stock[id]<=0 ? '品切れです' : `「${c.text}」`;
+  $('modalRoot').innerHTML = `<div class="veil" data-veil>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <div class="cover">${coverSVG(a)}</div>
+      <div>
+        <h3 id="mTitle">${esc(a.title)}</h3>
+        <div class="by">${esc(ar.name)}（${a.year}）</div>
+        <div class="chips"><span class="chip g">${esc(ar.genre)}</span>${a.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>
+        <div class="kv"><span>価格 <b>${yen(a.price)}</b></span><span>在庫 <b>${S.stock[id]}</b>枚</span></div>
+        <div class="acc">
+          <button class="acc-head" id="accHead" aria-expanded="false" aria-controls="accBody">収録曲（${a.tracks.length}曲）</button>
+          <div class="acc-body" id="accBody"><div><ol>${a.tracks.map(t=>`<li>${esc(t)}</li>`).join('')}</ol></div></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn go" id="btnHand" ${canHand?'':'disabled'}>${canHand?esc(who)+'に渡す':'渡せません'}</button>
+          <button class="btn" data-close>棚に戻す</button>
+        </div>
+        <div class="modal-actions"><span class="note">${esc(note)}</span></div>
+      </div>
+    </div></div>`;
+  $('btnHand').focus();
+}
+function closeModal(){ $('modalRoot').innerHTML = ''; modalAlbum = null; renderAll(); }
+
+/* 精算（インフォグラフィック） */
+function showReport(){
+  const r = S.lastReport; if (!r) return;
+  const max = Math.max(1, ...r.hourly);
+  const peak = r.hourly.indexOf(Math.max(...r.hourly));
+  const repDiff = r.repEnd - r.repStart;
+  $('modalRoot').innerHTML = `<div class="veil">
+    <div class="modal report" role="dialog" aria-modal="true" aria-labelledby="rTitle" style="grid-template-columns:1fr">
+      <h3 id="rTitle">DAY ${r.day} 精算</h3>
+      <div class="nums">
+        <div class="num"><small>売上</small><b data-count="${r.sales}" data-yen>¥0</b></div>
+        <div class="num"><small>来店</small><b data-count="${r.visitors}">0</b>人</div>
+        <div class="num"><small>お買い上げ</small><b data-count="${r.served}">0</b>人</div>
+        <div class="num"><small>帰ってしまった</small><b data-count="${r.lost}">0</b>人</div>
+        <div class="num"><small>評判</small><b>${repDiff>=0?'+':''}${repDiff}</b></div>
+      </div>
+      <div>
+        <div class="bars">${r.hourly.map((v,i)=>`<div><em>${v||''}</em><i class="${i===peak&&v?'pk':''}" data-h="${v/max*100}"></i></div>`).join('')}</div>
+        <div class="hours">${r.hourly.map((_,i)=>`<span>${10+i}時</span>`).join('')}</div>
+      </div>
+      <div class="modal-actions"><button class="btn go" id="btnNext">翌日の準備へ</button></div>
+    </div></div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.querySelectorAll('.bars i').forEach(i=>i.style.height = i.dataset.h + '%');
+    document.querySelectorAll('[data-count]').forEach(el=>countUp(el, +el.dataset.count, el.hasAttribute('data-yen')));
+  }));
+}
+function countUp(el, to, isYen){
+  const t0 = performance.now(), dur = 900;
+  const f = t => { const p = Math.min(1,(t-t0)/dur), v = Math.round(to*(1-Math.pow(1-p,3))); el.textContent = isYen ? yen(v) : v; if (p<1) requestAnimationFrame(f); };
+  requestAnimationFrame(f);
+}
+function showPause(){
+  $('modalRoot').innerHTML = `<div class="veil pause-veil"><div class="modal" role="dialog" aria-modal="true"><h3>一時停止中</h3><p>時計は止まっています。</p><div class="modal-actions" style="justify-content:center"><button class="btn go" id="btnResume">営業に戻る</button></div></div></div>`;
+}
+function stamp(text, miss){
+  const el = document.createElement('div');
+  el.className = 'stamp' + (miss?' miss':'');
+  el.innerHTML = [...text].map((ch,i)=>`<span style="--i:${i};--r:${(i%2?8:-8)}deg">${esc(ch)}</span>`).join('');
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1150);
+}
+
+/* =========================================================
+   操作
+   ========================================================= */
+document.addEventListener('click', e=>{
+  const t = e.target;
+  const dd = t.closest('.dd');
+  if (dd){
+    if (t.closest('.dd-btn')){
+      const open = !dd.classList.contains('open');
+      closeDropdowns(dd);
+      dd.classList.toggle('open', open);
+      dd.querySelector('.dd-list').hidden = !open;
+      dd.querySelector('.dd-btn').setAttribute('aria-expanded', String(open));
+      return;
+    }
+    const opt = t.closest('[data-val]');
+    if (opt){ view[dd.dataset.dd] = opt.dataset.val; view.page = 1; renderFloor(); return; }
+  } else closeDropdowns();
+
+  if (t.closest('[data-crumb="top"]')){ view.crate = null; view.page = 1; renderFloor(); return; }
+  const cr = t.closest('[data-crate]'); if (cr){ view.crate = cr.dataset.crate; view.page = 1; view.genre = 'all'; renderFloor(); return; }
+  const pg = t.closest('[data-page]'); if (pg && !pg.disabled){ view.page = +pg.dataset.page; renderFloor(); return; }
+  const al = t.closest('[data-album]'); if (al){ openAlbum(+al.dataset.album); return; }
+  const cu = t.closest('[data-cust]'); if (cu){ S.selectedId = +cu.dataset.cust; reactionFor = null; renderCounter(); return; }
+  if (t.id === 'accHead'){ const open = t.getAttribute('aria-expanded') !== 'true'; t.setAttribute('aria-expanded', String(open)); $('accBody').classList.toggle('open', open); return; }
+  if (t.id === 'btnHand' && modalAlbum){ handOver(modalAlbum); return; }
+  if (t.closest('[data-close]') || t.hasAttribute('data-veil')){ closeModal(); return; }
+  if (t.id === 'btnNext'){ nextDay(); return; }
+  if (t.id === 'btnResume'){ paused = false; lastT = 0; $('modalRoot').innerHTML = ''; return; }
+  const sp = t.closest('[data-speed]'); if (sp){ speed = +sp.dataset.speed; return; }
+});
+$('btnMain').addEventListener('click', ()=>{ if (S.phase==='prep') openShop(); else if (S.phase==='closed') showReport(); });
+$('btnPause').addEventListener('click', ()=>{ paused = true; showPause(); });
+$('btnReset').addEventListener('click', ()=>{ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} S = freshState(); view.crate=null; closeModal(); });
+document.addEventListener('keydown', e=>{
+  if (e.key === 'Escape'){
+    if (document.querySelector('.dd.open')) closeDropdowns();
+    else if (modalAlbum) closeModal();
+  }
+});
+// 放置ゲームではないので、タブを離れたら自動で一時停止
+document.addEventListener('visibilitychange', ()=>{
+  if (document.hidden && S.phase==='open' && !paused){ paused = true; save(); showPause(); }
+});
+window.addEventListener('beforeunload', save);
+
+/* 起動 */
+if (DEBUG) $('debugBox').hidden = false;
+if (S.phase === 'open'){ paused = true; renderAll(); showPause(); }
+else { renderAll(); if (S.phase === 'closed') showReport(); }
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
