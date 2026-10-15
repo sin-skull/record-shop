@@ -806,8 +806,9 @@ const APPS = [
   {id:'shop', name:'ミナト音盤卸', glyph:'盤', color:'#f0cf4a'},
   {id:'equip', name:'店舗設備', glyph:'設', color:'#9fc3d6'},
 ];
-function openPC(){ pcOpen = true; $('pc').hidden = false; renderPC(); }
-function leavePC(){ pcOpen = false; $('pc').hidden = true; pcv.menu = false; }
+function showEl(el, on){ el.hidden = !on; el.style.display = on ? '' : 'none'; }
+function openPC(){ pcOpen = true; showEl($('pc'), true); renderPC(); }
+function leavePC(){ pcOpen = false; showEl($('pc'), false); pcv.menu = false; }
 function renderTaskbar(){
   $('pcClock').textContent = hhmm(S.clock);
   $('pcMoney').textContent = '所持金 ' + yen(S.money);
@@ -1054,7 +1055,8 @@ document.addEventListener('visibilitychange', ()=>{
 window.addEventListener('beforeunload', save);
 
 /* 起動 */
-if (DEBUG) $('debugBox').hidden = false;
+showEl($('pc'), false);
+showEl($('debugBox'), DEBUG);
 if (S.phase === 'open'){ paused = true; renderAll(); showPause(); }
 else { renderAll(); if (S.phase === 'closed') showReport(); }
 requestAnimationFrame(tick);
