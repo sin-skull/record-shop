@@ -24,7 +24,7 @@
 *{box-sizing:border-box}
 /* display指定した要素にも hidden 属性を確実に効かせる */
 [hidden]{display:none!important}
-.pc[hidden],.debug[hidden],.dd-list[hidden],.btn[hidden]{display:none}
+.backyard[hidden],.debug[hidden],.dd-list[hidden],.btn[hidden]{display:none}
 html,body{height:100%}
 body{margin:0;background:var(--wall);color:var(--chalk);font-family:var(--f-body);font-size:15px;line-height:1.6}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -47,7 +47,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px dashed var(--pop);outl
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .btn.go{background:var(--pop)}
 .btn.ghost{background:transparent;color:var(--chalk);box-shadow:none;border:1.5px solid var(--wall-3)}
-.btn.pc{background:var(--desk);color:var(--chalk);box-shadow:0 3px 0 var(--desk-2)}
+.btn.pcbtn{background:var(--desk);color:var(--chalk);box-shadow:0 3px 0 var(--desk-2)}
 .debug{display:flex;gap:6px}
 
 /* ===== 本体 ===== */
@@ -164,12 +164,12 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px dashed var(--pop);outl
 .pause-veil .modal{grid-template-columns:1fr;text-align:center;width:min(380px,100%)}
 
 /* ===== バックヤードPC ===== */
-.pc{position:fixed;inset:0;z-index:60;background:#191f1c;display:grid;place-items:center;padding:14px max(14px,env(safe-area-inset-left,0px));animation:fade .2s}
-.bezel{width:min(1100px,100%);height:min(720px,100%);background:var(--bezel);border-radius:14px;padding:16px 16px 28px;box-shadow:0 0 0 2px #a99f88 inset,0 20px 50px rgba(0,0,0,.5);position:relative;display:flex}
+.backyard{position:fixed;inset:0;z-index:60;background:#191f1c;display:flex;align-items:center;justify-content:center;padding:14px max(14px,env(safe-area-inset-left,0px));animation:fade .2s}
+.bezel{width:min(1100px,100%);height:min(720px,calc(100vh - 28px));height:min(720px,calc(100dvh - 28px));background:var(--bezel);border-radius:14px;padding:16px 16px 28px;box-shadow:0 0 0 2px #a99f88 inset,0 20px 50px rgba(0,0,0,.5);position:relative;display:flex}
 .bezel::after{content:"";position:absolute;bottom:9px;left:50%;width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok);transform:translateX(-50%)}
 .screen{flex:1;min-width:0;background:var(--desk);border-radius:4px;overflow:hidden;display:grid;grid-template-rows:1fr auto;position:relative;color:var(--chalk);
   background-image:radial-gradient(circle at 80% 20%,rgba(255,255,255,.06),transparent 40%)}
-.desktop{position:relative;min-height:0;padding:14px;display:grid;grid-template-columns:auto 1fr;gap:14px}
+.desktop{position:relative;min-height:0;padding:14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px}
 .icons{display:flex;flex-direction:column;gap:10px;align-items:center}
 .icon{width:86px;background:none;border:1px solid transparent;border-radius:3px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--chalk)}
 .icon:hover,.icon.on{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
@@ -272,6 +272,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px dashed var(--pop);outl
 .lv{display:flex;gap:4px;margin:4px 0 10px}
 .lv i{width:28px;height:8px;border-radius:2px;background:var(--win-line)}
 .lv i.on{background:var(--s-accent,#c4372b)}
+@media (max-width:700px){.bezel{padding:8px 8px 22px}.desktop{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);padding:8px;gap:8px}.icons{flex-direction:row}.icon{width:auto;flex-direction:row;padding:4px 8px}.icon .g{width:28px;height:28px;font-size:13px}.s-logo small{display:none}.s-head{position:relative}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -284,7 +285,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px dashed var(--pop);outl
     <div class="stat"><b>所持金</b><span id="sMoney">¥0</span></div>
     <div class="stat"><b>評判</b><span id="sRep">0</span></div>
     <span class="phase-tag prep" id="sPhase">開店前</span>
-    <button class="btn pc" id="btnPC">バックヤードのPC</button>
+    <button class="btn pcbtn" id="btnPC">バックヤードのPC</button>
     <button class="btn go" id="btnMain">開店する</button>
     <button class="btn ghost" id="btnPause" hidden>一時停止</button>
     <div class="debug" id="debugBox" hidden>
@@ -311,7 +312,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px dashed var(--pop);outl
   </main>
 </div>
 
-<div class="pc" id="pc" hidden>
+<div class="backyard" id="pc" hidden>
   <div class="bezel">
     <div class="screen">
       <div class="desktop" id="desktop"></div>
@@ -551,7 +552,8 @@ function stepMinute(){
 }
 function openShop(){
   S.phase = 'open'; S.clock = OPEN_MIN; S.queue = []; S.selectedId = null;
-  S.today = freshToday(); S.today.repStart = S.rep;
+  // 当日の集計は翌日の準備開始時にリセット済み（開店前の仕入れも当日分に含める）
+  S.today.repStart = S.rep;
   S.nextCustomerAt = OPEN_MIN + 2; acc = 0; paused = false;
   addLog(`DAY ${S.day} 開店（〜${hhmm(closeMin())}）`, 'g');
   save(); renderAll();
@@ -564,7 +566,7 @@ function closeShop(){
   S.lastReport = {day:S.day, ...S.today, repEnd:S.rep, money:S.money, hours:(closeMin()-OPEN_MIN)/60};
   save(); leavePC(); renderAll(); showReport();
 }
-function nextDay(){ S.day++; S.phase = 'prep'; S.clock = OPEN_MIN; S.log = []; save(); closeModal(); renderAll(); }
+function nextDay(){ S.day++; S.phase = 'prep'; S.clock = OPEN_MIN; S.log = []; S.today = freshToday(); save(); closeModal(); renderAll(); }
 
 /* =========================================================
    接客
